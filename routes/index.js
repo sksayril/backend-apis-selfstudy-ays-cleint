@@ -6,6 +6,7 @@ let  Category = require('../models/category.model');
 const HeroBanner = require("../models/herobanner.models");
 const LatestUpdate = require("../models/latestupdate.model");
 const Blog = require("../models/blog.mdel");
+const Quiz = require("../models/quiz.model");
 
 /* GET home page. */
 // router.get('/', function(req, res, next) {
@@ -365,5 +366,41 @@ router.post(
     }
   }
 );
+
+
+//QUIZ APIS
+router.post("/api/create/quiz", async (req, res) => {
+  try {
+    const { title, questions } = req.body;
+
+    const newQuiz = new Quiz({ title, questions });
+    const savedQuiz = await newQuiz.save();
+
+    res.status(201).json(savedQuiz);
+  } catch (err) {
+    res.status(500).json({ message: "Error creating quiz", error: err.message });
+  }
+});
+
+// Get all quizzes
+router.get("/api/getall/quiz", async (req, res) => {
+  try {
+    const quizzes = await Quiz.find();
+    res.json(quizzes);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching quizzes" });
+  }
+});
+
+// Get a specific quiz by ID
+router.get("/api/getquizbyid/:id", async (req, res) => {
+  try {
+    const quiz = await Quiz.findById(req.params.id);
+    if (!quiz) return res.status(404).json({ message: "Quiz not found" });
+    res.json(quiz);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching quiz" });
+  }
+});
 
 module.exports = router;
