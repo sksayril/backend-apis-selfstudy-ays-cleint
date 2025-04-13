@@ -317,7 +317,7 @@ router.post(
   async (req, res) => {
     try {
       const {
-        blogId,
+        _id,
         title,
         excerpt,
         content,
@@ -326,42 +326,42 @@ router.post(
         date,
       } = req.body;
 
-      if (!blogId) {
+      if (!_id) {
         return res.status(400).json({ error: "blogId (_id) is required" });
       }
 
-      const blog = await Blog.findById(blogId);
+      const blog = await Blog.findById(_id);
       if (!blog) {
         return res.status(404).json({ error: "Blog not found" });
       }
 
-      // Update text fields
-      blog.title = title || blog.title;
-      blog.excerpt = excerpt || blog.excerpt;
-      blog.content = content || blog.content;
-      blog.category = category || blog.category;
-      blog.readTime = readTime || blog.readTime;
-      blog.date = date || blog.date;
+      // Update text fields only if present
+      if (title) blog.title = title;
+      if (excerpt) blog.excerpt = excerpt;
+      if (content) blog.content = content;
+      if (category) blog.category = category;
+      if (readTime) blog.readTime = readTime;
+      if (date) blog.date = date;
 
-      // Update cover image if uploaded
-      if (req.files?.image?.[0]) {
+      // Optional image
+      if (req.files && req.files.image && req.files.image.length > 0) {
         blog.image = req.files.image[0].location;
       }
 
-      // Update gallery if new ones are uploaded
-      if (req.files?.gallery?.length) {
+      // Optional gallery
+      if (req.files && req.files.gallery && req.files.gallery.length > 0) {
         blog.gallery = req.files.gallery.map((file) => file.location);
       }
 
       await blog.save();
 
-      res.status(200).json({
+      return res.status(200).json({
         message: "Blog updated successfully",
         blog,
       });
     } catch (err) {
       console.error("Update Blog Error:", err);
-      res.status(500).json({ error: "Internal Server Error" });
+      return res.status(500).json({ error: "Internal Server Error" });
     }
   }
 );
