@@ -179,10 +179,12 @@ const heroUpload = upload.fields([
 
 router.post("/api/upload-hero-banner", heroUpload, async (req, res) => {
   try {
-    const { title } = req.body;
+    const { title, url } = req.body;
 
     if (!title || !req.files.desktop || !req.files.mobile) {
-      return res.status(400).json({ error: "Title, desktop, and mobile images are required" });
+      return res.status(400).json({
+        error: "Title, desktop, and mobile images are required",
+      });
     }
 
     const desktopUrl = req.files.desktop[0].location;
@@ -192,6 +194,7 @@ router.post("/api/upload-hero-banner", heroUpload, async (req, res) => {
       title,
       desktop: desktopUrl,
       mobile: mobileUrl,
+      url: url || "", // optional fallback
     });
 
     await banner.save();
@@ -201,10 +204,35 @@ router.post("/api/upload-hero-banner", heroUpload, async (req, res) => {
       data: banner,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Upload error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
+router.post("/api/delete-hero-banner", async (req, res) => {
+  try {
+    const { id } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: "Banner ID is required" });
+    }
+
+    const deletedBanner = await HeroBanner.findByIdAndDelete(id);
+
+    if (!deletedBanner) {
+      return res.status(404).json({ error: "Banner not found" });
+    }
+
+    res.status(200).json({
+      message: "Banner deleted successfully",
+      data: deletedBanner,
+    });
+  } catch (err) {
+    console.error("Delete error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 
 // Get All Hero Banners
 router.get("/api/get/hero-banners", async (req, res) => {
@@ -221,7 +249,7 @@ router.get("/api/get/hero-banners", async (req, res) => {
 
 router.post("/api/latest/upload-update", upload.single("image"), async (req, res) => {
   try {
-    const { title, subtitle, date, readTime, content } = req.body;
+    const { title, subtitle, date, readTime, content ,isTop } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ error: "Image file is required" });
@@ -235,6 +263,7 @@ router.post("/api/latest/upload-update", upload.single("image"), async (req, res
       image: imageUrl,
       date,
       readTime,
+      isTop: isTop ,  // Convert string to boolean
       content,
     });
 
@@ -243,6 +272,57 @@ router.post("/api/latest/upload-update", upload.single("image"), async (req, res
     res.status(201).json({ message: "Update uploaded successfully", data: newUpdate });
   } catch (err) {
     console.error("Upload error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+router.post("/api/latest/update-isTop", async (req, res) => {
+  try {
+    const { id, isTop } = req.body; // Get the ID and isTop value from the request body
+
+    // Validate input
+    if (!id) {
+      return res.status(400).json({ error: "ID is required" });
+    }
+
+    if (typeof isTop !== 'boolean') {
+      return res.status(400).json({ error: "'isTop' must be a boolean value" });
+    }
+
+    // Find the update by ID and update the isTop field
+    const update = await LatestUpdate.findByIdAndUpdate(
+      id,
+      { isTop },
+      { new: true }  // This option ensures the updated document is returned
+    );
+
+    if (!update) {
+      return res.status(404).json({ error: "Update not found" });
+    }
+
+    res.status(200).json({ message: "Update status updated successfully", data: update });
+  } catch (err) {
+    console.error("Update error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post("/api/latest/delete-update", async (req, res) => {
+  try {
+    const { id } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: "ID is required" });
+    }
+
+    const deleted = await LatestUpdate.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ error: "Update not found" });
+    }
+
+    res.status(200).json({ message: "Update deleted successfully", data: deleted });
+  } catch (err) {
+    console.error("Delete error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -297,6 +377,27 @@ router.post(
     }
   }
 );
+router.post("/api/delete-blog", async (req, res) => {
+  try {
+    const { id } = req.body;
+
+    // if (!id) {
+    //   return res.status(400).json({ error: "Blog ID is required" });
+    // }
+
+    const deletedBlog = await Blog.findByIdAndDelete(id);
+
+    if (!deletedBlog) {
+      return res.status(404).json({ error: "Blog not found" });
+    }
+
+    res.status(200).json({ message: "Blog deleted successfully", blog: deletedBlog });
+  } catch (error) {
+    console.error("Delete Blog Error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 
 router.get("/api/get/blogs", async (req, res) => {
   try {
@@ -379,6 +480,25 @@ router.post("/api/create/quiz", async (req, res) => {
     res.status(201).json(savedQuiz);
   } catch (err) {
     res.status(500).json({ message: "Error creating quiz", error: err.message });
+  }
+});
+router.post("/api/delete/quiz", async (req, res) => {
+  try {
+    const { id } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ message: "Quiz ID is required" });
+    }
+
+    const deletedQuiz = await Quiz.findByIdAndDelete(id);
+
+    if (!deletedQuiz) {
+      return res.status(404).json({ message: "Quiz not found" });
+    }
+
+    res.status(200).json({ message: "Quiz deleted successfully", data: deletedQuiz });
+  } catch (err) {
+    res.status(500).json({ message: "Error deleting quiz", error: err.message });
   }
 });
 

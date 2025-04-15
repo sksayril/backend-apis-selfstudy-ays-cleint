@@ -8,6 +8,8 @@ const UpdateSchema = new mongoose.Schema(
     date: { type: String, required: true },
     readTime: { type: String, required: true },
     content: { type: String, required: true }, // HTML content as string
+    isTop: { type: Boolean, default: false },  // Added field for isTop
+
   },
   { timestamps: true }
 );

@@ -14,8 +14,11 @@ const HeroBannerSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    bannerurl:{
+      type: String,
+    }
   },
-  { timestamps: true }
+  { timestamps: true,strict:false }
 );
 
 module.exports = mongoose.model("HeroBanner", HeroBannerSchema);
