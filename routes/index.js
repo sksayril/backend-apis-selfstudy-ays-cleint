@@ -547,4 +547,33 @@ router.get("/api/getsponser", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+router.post("/api/update/sponser", async (req, res) => {
+  try {
+    const { id, name, contextColor, url } = req.body;
+
+    const updatedSponsor = await Sponsor.findByIdAndUpdate(
+      id,
+      { name, contextColor, url },
+      { new: true }
+    );
+
+    if (!updatedSponsor) return res.status(404).json({ message: "Sponsor not found" });
+
+    res.status(200).json(updatedSponsor);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+router.post("/api/delete/sponser", async (req, res) => {
+  try {
+    const { id } = req.body;
+
+    const deletedSponsor = await Sponsor.findByIdAndDelete(id);
+    if (!deletedSponsor) return res.status(404).json({ message: "Sponsor not found" });
+
+    res.status(200).json({ message: "Sponsor deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 module.exports = router;
