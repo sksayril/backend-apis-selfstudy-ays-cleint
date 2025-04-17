@@ -566,9 +566,9 @@ router.post("/api/update/sponser", async (req, res) => {
 });
 router.post("/api/delete/sponser", async (req, res) => {
   try {
-    const { id } = req.body;
+    const { _id } = req.body;
 
-    const deletedSponsor = await Sponsor.findByIdAndDelete(id);
+    const deletedSponsor = await Sponsor.findByIdAndDelete(_id);
     if (!deletedSponsor) return res.status(404).json({ message: "Sponsor not found" });
 
     res.status(200).json({ message: "Sponsor deleted successfully" });
