@@ -8,6 +8,8 @@ const LatestUpdate = require("../models/latestupdate.model");
 const Blog = require("../models/blog.mdel");
 const Quiz = require("../models/quiz.model");
 
+const Sponsor = require("../models/Sponsor.model");
+
 /* GET home page. */
 // router.get('/', function(req, res, next) {
  
@@ -523,4 +525,26 @@ router.get("/api/getquizbyid/:id", async (req, res) => {
   }
 });
 
+//Sponser Model
+router.post("/api/addsponser", async (req, res) => {
+  try {
+    const { name, contextColor, url } = req.body;
+
+    const newSponsor = new Sponsor({ name, contextColor, url });
+    const savedSponsor = await newSponsor.save();
+
+    res.status(201).json(savedSponsor);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.get("/api/getsponser", async (req, res) => {
+  try {
+    const sponsors = await Sponsor.find().sort({ createdAt: -1 });
+    res.status(200).json(sponsors);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 module.exports = router;
