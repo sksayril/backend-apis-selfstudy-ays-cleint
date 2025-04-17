@@ -277,6 +277,34 @@ router.post("/api/latest/upload-update", upload.single("image"), async (req, res
     res.status(500).json({ error: "Server error" });
   }
 });
+router.post("/api/latest/update-content", async (req, res) => {
+  try {
+    const { id, content } = req.body;
+
+    if (!id || !content) {
+      return res.status(400).json({ error: "Both 'id' and 'content' are required" });
+    }
+
+    const updatedUpdate = await LatestUpdate.findByIdAndUpdate(
+      id,
+      { content },
+      { new: true }
+    );
+
+    if (!updatedUpdate) {
+      return res.status(404).json({ error: "Update not found" });
+    }
+
+    res.status(200).json({
+      message: "Content updated successfully",
+      data: updatedUpdate,
+    });
+  } catch (err) {
+    console.error("Update error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 router.post("/api/latest/update-isTop", async (req, res) => {
   try {
     const { id, isTop } = req.body; // Get the ID and isTop value from the request body
