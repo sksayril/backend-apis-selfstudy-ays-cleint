@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 const User = require('../models/user.model');
-const jwt = require('jsonwebtoken');
+const { signToken } = require('../utilities/jwtHelper');
 /* GET users listing. */
 router.post('/register', async (req, res) => {
   try {
@@ -33,10 +33,13 @@ router.post('/login', async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid email or password' });
 
-    // Create token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '2h' });
+    const token = signToken(user, '2h');
 
-    res.status(200).json({ message: 'Login successful', token });
+    res.status(200).json({
+      message: 'Login successful',
+      token,
+      user: { id: user._id, email: user.email, role: user.role },
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

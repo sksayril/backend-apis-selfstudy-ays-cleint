@@ -3,11 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "nodemon ./bin/www"
+    "start": "nodemon --max-old-space-size=4096 ./bin/www"
   },
   "dependencies": {
     "aws-sdk": "^2.1692.0",
+    "axios": "^1.16.0",
     "bcrypt": "^5.1.1",
+    "cheerio": "^1.2.0",
     "cookie-parser": "~1.4.4",
     "cors": "^2.8.5",
     "debug": "~2.6.9",

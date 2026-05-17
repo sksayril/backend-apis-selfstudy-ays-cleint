@@ -1,8 +1,14 @@
 var express = require('express');
 var router = express.Router();
 const upload = require('../middleware/s3');
+const adminAuth = require('../middleware/adminAuth');
 
 let  Category = require('../models/category.model');
+const {
+  applyContentUpdates,
+  resolvePdfUrl,
+  resolveImageUrls,
+} = require('../utilities/contentHelper');
 const HeroBanner = require("../models/herobanner.models");
 const LatestUpdate = require("../models/latestupdate.model");
 const Blog = require("../models/blog.mdel");
@@ -14,7 +20,7 @@ const Sponsor = require("../models/Sponsor.model");
 // router.get('/', function(req, res, next) {
  
 // });
-router.post('/api/categories', async (req, res) => {
+router.post('/api/categories', adminAuth, async (req, res) => {
   try {
     const { name, parentId,  type } = req.body;
     let path = [name];
@@ -32,50 +38,50 @@ router.post('/api/categories', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-router.post('/api/categories/content', upload.fields([
+router.post('/api/categories/content', adminAuth, upload.fields([
   { name: 'pdf', maxCount: 1 },
   { name: 'images', maxCount: 10 }
 ]), async (req, res) => {
   try {
-    const { text,categoryid } = req.body;
-    const pdf = req.files?.pdf;
-    const images = req.files?.images;
+    const { text, categoryid } = req.body;
+    const category = await Category.findById({ _id: categoryid });
+    if (!category) return res.status(404).json({ error: 'Category not found' });
 
-    // Validate only one content type is passed
-    const typesProvided = [
-      text ? 'text' : null,
-      pdf?.length ? 'pdf' : null,
-      images?.length ? 'images' : null
-    ].filter(Boolean);
+    const childCount = await Category.countDocuments({ parentId: categoryid });
+    const isFinalSubcategory = childCount === 0;
 
-    if (typesProvided.length !== 1) {
+    const pdfUrl = resolvePdfUrl(req);
+    const imageUrls = resolveImageUrls(req);
+    const hasPdf = Boolean(pdfUrl);
+    const hasImages = Boolean(imageUrls?.length);
+    const hasText = Boolean(text);
+
+    if (!isFinalSubcategory) {
+      const typesProvided = [
+        hasText ? 'text' : null,
+        hasPdf ? 'pdf' : null,
+        hasImages ? 'images' : null,
+      ].filter(Boolean);
+
+      if (typesProvided.length !== 1) {
+        return res.status(400).json({
+          error: 'Please provide only one type of content at a time: pdf, images, or text.',
+        });
+      }
+    } else if (!hasText && !hasPdf && !hasImages) {
       return res.status(400).json({
-        error: 'Please provide only one type of content at a time: pdf, images, or text.'
+        error: 'Provide at least one of: text, pdf (file or URL string), or images (files or URL string).',
       });
     }
 
-    // Fetch existing category
-    const category = await Category.findById({_id: categoryid});
-    if (!category) return res.status(404).json({ error: 'Category not found' });
-
-    // Initialize content object if missing
-    if (!category.content) category.content = {};
-
-    // Update content based on type
-    if (text) {
-      category.content.text = text;
-    } else if (pdf && pdf.length) {
-      category.content.pdfUrl = pdf[0].location;
-    } else if (images && images.length) {
-      const imageUrls = images.map(img => img.location);
-      category.content.imageUrls = imageUrls;
-    }
-
-    category.type = 'content'; // ensure it's marked as content
+    applyContentUpdates(category, { text, pdfUrl, imageUrls });
+    category.type = 'content';
     await category.save();
 
     res.json({
-      message: `Successfully updated ${typesProvided[0]} content.`,
+      message: isFinalSubcategory
+        ? 'Final subcategory content updated successfully.'
+        : 'Content updated successfully.',
       content: category.content,
     });
 
@@ -162,7 +168,7 @@ const deleteCategoryRecursively = async (id) => {
   await Category.findByIdAndDelete(id);
 };
 
-router.delete('/api/categories/:id', async (req, res) => {
+router.delete('/api/categories/:id', adminAuth, async (req, res) => {
   try {
     await deleteCategoryRecursively(req.params.id);
     res.json({ success: true });

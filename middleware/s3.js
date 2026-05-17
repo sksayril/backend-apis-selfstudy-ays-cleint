@@ -24,7 +24,7 @@ const upload = multer({
     key: (req, file, cb) => {
       const ext = file.originalname.split(".").pop();
       const filename = `${Date.now()}-${file.fieldname}.${ext}`;
-      const folderPath = "elboz/uploads/catalog/product/Syska/Cables/100/bulkimages";
+      const folderPath = process.env.AWS_S3_FOLDER_PREFIX || "notesmarket/uploads";
       const fullPath = `${folderPath}/${filename}`;
       cb(null, fullPath);
     },
